@@ -1,4 +1,4 @@
-# ui.py (Upgraded Grid Guru)
+# ui.py (Upgraded Grid Guru with input validation)
 
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -31,18 +31,22 @@ if uploaded:
     load = df['load'].tolist()
     solar = df['solar'].tolist()
 else:
-    load = st.text_input("Daily Load Profile (comma-separated)", "3,4,5,6,7,6,5")
-    solar = st.text_input("Daily Solar Profile (comma-separated)", "2,3,5,6,8,7,4")
-    load = [float(x) for x in load.split(",")]
-    solar = [float(x) for x in solar.split(",")]
-
-if len(solar) != len(load):
-    st.error("Solar and load profiles must be the same length.")
-    st.stop()
+    load_input = st.text_input("Daily Load Profile (comma-separated)", "3,4,5,6,7,6,5")
+    solar_input = st.text_input("Daily Solar Profile (comma-separated)", "2,3,5,6,8,7,4")
+    try:
+        load = [float(x.strip()) for x in load_input.split(",") if x.strip() != ""]
+        solar = [float(x.strip()) for x in solar_input.split(",") if x.strip() != ""]
+    except ValueError:
+        st.error("Invalid input: Please enter only numbers separated by commas.")
+        st.stop()
 
 if st.button("Simulate"):
     try:
-        # Simulation + Dispatch
+        if len(load) == 0 or len(solar) == 0:
+            st.error("Load and solar inputs must not be empty.")
+            st.stop()
+
+        # Simulate with repeating profiles to match days
         net = simulate_grid(load, solar, days)
         dispatch, grid_draw, grid_cost = optimize_dispatch(net)
 
