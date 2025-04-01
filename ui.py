@@ -36,6 +36,10 @@ else:
     load = [float(x) for x in load.split(",")]
     solar = [float(x) for x in solar.split(",")]
 
+if len(solar) != len(load):
+    st.error("Solar and load profiles must be the same length.")
+    st.stop()
+
 if st.button("Simulate"):
     try:
         # Simulation + Dispatch
