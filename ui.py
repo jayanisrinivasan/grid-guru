@@ -1,34 +1,72 @@
-# ui.py
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+# ui.py (Upgraded Grid Guru)
 
 import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import os
+import sys
+
+# Add src/ to path
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+
 from simulator import simulate_grid
 from optimizer import optimize_dispatch
 from visualizer import plot_power_flow
-import matplotlib.pyplot as plt
 
-st.title("⚡ Grid Guru Web Simulator")
-st.markdown("Model your microgrid with solar + load data.")
+st.set_page_config(page_title="Grid Guru Simulator", page_icon="⚡", layout="centered")
 
-days = st.slider("Simulation Days", 1, 30, 7)
-load = st.text_input("Daily Load Profile (comma-separated)", "3,4,5,6,7,6,5")
-solar = st.text_input("Daily Solar Profile (comma-separated)", "2,3,5,6,8,7,4")
+st.markdown("""
+# ⚡ Grid Guru Web Simulator
+Model your microgrid with solar + load data, dispatch optimization, and cost tracking.
+""")
+
+st.sidebar.header("⚙️ Simulation Settings")
+days = st.sidebar.slider("Simulation Days", 1, 30, 7)
+
+uploaded = st.sidebar.file_uploader("Upload CSV (with 'load' and 'solar' columns)", type="csv")
+
+if uploaded:
+    df = pd.read_csv(uploaded)
+    load = df['load'].tolist()
+    solar = df['solar'].tolist()
+else:
+    load = st.text_input("Daily Load Profile (comma-separated)", "3,4,5,6,7,6,5")
+    solar = st.text_input("Daily Solar Profile (comma-separated)", "2,3,5,6,8,7,4")
+    load = [float(x) for x in load.split(",")]
+    solar = [float(x) for x in solar.split(",")]
 
 if st.button("Simulate"):
     try:
-        load_vals = [float(x) for x in load.split(",")]
-        solar_vals = [float(x) for x in solar.split(",")]
-        net = simulate_grid(load_vals, solar_vals, days)
-        dispatch = optimize_dispatch(net)
+        # Simulation + Dispatch
+        net = simulate_grid(load, solar, days)
+        dispatch, grid_draw, grid_cost = optimize_dispatch(net)
 
+        # Plot
         fig, ax = plt.subplots()
-        ax.plot(net, label="Net Energy")
-        ax.plot(dispatch, label="Battery Dispatch")
+        ax.plot(net, label="Net Energy", linewidth=2)
+        ax.plot(dispatch, label="Battery Dispatch", linewidth=2)
         ax.set_xlabel("Day")
-        ax.set_ylabel("kWh")
+        ax.set_ylabel("Energy (kWh)")
+        ax.set_title("Energy Flow Simulation")
         ax.legend()
+        ax.grid(True)
         st.pyplot(fig)
+
+        # Metrics
+        st.subheader("📊 Simulation Summary")
+        st.metric("Total Grid Energy Used (kWh)", round(sum(grid_draw), 2))
+        st.metric("Estimated Grid Cost ($)", f"{sum(grid_cost):.2f}")
+
+        # Download Results
+        df_out = pd.DataFrame({
+            "Day": list(range(days)),
+            "Net Energy": net,
+            "Battery Dispatch": dispatch,
+            "Grid Draw": grid_draw,
+            "Cost ($)": grid_cost
+        })
+        st.download_button("📥 Download CSV", df_out.to_csv(index=False), "results.csv", "text/csv")
+
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Simulation error: {e}")
