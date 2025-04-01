@@ -1,7 +1,6 @@
 # Grid Guru 🧠⚡
 
 A Python-based microgrid simulation tool that models decentralized energy flow, optimizes battery dispatch, and visualizes system behavior over time. 
-https://microgridsim.streamlit.app/
 
 ## 🔋 Features
 - Solar + Load profile simulation
