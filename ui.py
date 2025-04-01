@@ -1,4 +1,7 @@
 # ui.py
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 import streamlit as st
 from simulator import simulate_grid
