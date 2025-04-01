@@ -67,6 +67,8 @@ if st.button("Simulate"):
         st.metric("Estimated Grid Cost ($)", f"{sum(grid_cost):.2f}")
 
         # Download Results
+        grid_draw += [0] * (days - len(grid_draw))
+        grid_cost += [0] * (days - len(grid_cost))
         df_out = pd.DataFrame({
             "Day": list(range(days)),
             "Net Energy": net,
